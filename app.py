@@ -201,7 +201,7 @@ def dashboard():
 # Assessment Routes
 # ------------------------
 @app.route("/assessment", methods=["GET", "POST"])
-@login_required
+
 def assessment():
     if request.method == "POST":
         # ensure we read answers in order q1..qN
@@ -578,3 +578,4 @@ if __name__ == "__main__":
         db.create_all()
         print("Tables should now be created:", db.inspect(db.engine).get_table_names())
     app.run(debug=True)
+
