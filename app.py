@@ -10,7 +10,7 @@ from PIL import Image
 import pytesseract
 from pdf2image import convert_from_path
 import google.generativeai as genai
-
+from dotenv import load_dotenv
 import json
 import datetime
 from linkedin_scraper import fetch_linkedin_jobs
@@ -21,8 +21,11 @@ from werkzeug.security import generate_password_hash, check_password_hash
 # ------------------------
 # App Config
 # ------------------------
+load_dotenv()  
+
+
 app = Flask(__name__)
-app.secret_key = "supersecretkey"  # ⚠️ Cha nge in production
+app.secret_key = "a6ac4e65f90117092829b8bd037af890"  # ⚠️ Cha nge in production
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 db_path = os.path.join(BASE_DIR, "instance", "app.db")
 os.makedirs(os.path.dirname(db_path), exist_ok=True)
