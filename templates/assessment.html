@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Self-Assessment</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+    body { font-family: 'Poppins', sans-serif; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); min-height: 100vh; }
+    .progress-bar { height: 8px; border-radius: 4px; background: #e2e8f0; overflow: hidden; }
+    .progress-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, #8b5cf6, #ec4899); transition: width 0.5s ease; }
+    .option-label:hover { transform: translateY(-2px); box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    .pagination-dot { width: 10px; height: 10px; border-radius: 50%; background: #cbd5e1; margin: 0 4px; cursor: pointer; transition: all 0.3s ease; }
+    .pagination-dot.active { background: #4f46e5; transform: scale(1.3); }
+  </style>
+</head>
+<body class="py-10">
+
+  {% include 'header.html' %}
+
+  <div class="max-w-4xl mx-auto px-4 mt-8">
+    <!-- Progress -->
+    <div class="mb-10 bg-white rounded-2xl shadow-lg p-6">
+      <div class="flex justify-between items-center mb-3">
+        <span class="text-gray-600 font-medium">Assessment Progress</span>
+        <span class="text-indigo-600 font-bold"><span id="progress-count">0</span>/{{ questions|length }}</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+      </div>
+    </div>
+
+    <!-- Assessment Form -->
+    <form method="POST" action="{{ url_for('assessment', domain=domain) }}" class="bg-white rounded-2xl shadow-lg p-8 mb-8 space-y-8" id="assessmentForm">
+      <h2 class="text-3xl font-bold text-indigo-600 mb-2 text-center">Self-Assessment</h2>
+      <p class="text-gray-600 text-center mb-8">Answer the questions honestly to get personalized insights.</p>
+
+      {% for q in questions %}
+      {% set q_num = loop.index %}
+      <div class="p-6 bg-gray-50 rounded-xl shadow-sm">
+        <label class="block text-gray-800 font-semibold mb-4">
+          {{ q_num }}. {{ q }}
+        </label>
+
+        <div class="grid grid-cols-1 sm:grid-cols-5 gap-3">
+          {% set options = ["Strongly Dislike", "Dislike", "Neutral", "Like", "Strongly Like"] %}
+          {% for opt in options %}
+            {% set val = loop.index %}
+            <label class="cursor-pointer block text-center py-2 rounded-lg border border-gray-300 hover:bg-indigo-100 transition peer-checked:bg-indigo-600 peer-checked:text-white">
+              <input type="radio" name="q{{ q_num }}" value="{{ val }}" class="hidden peer" required>
+              {{ opt }}
+            </label>
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+
+      <!-- Submit -->
+      <div class="flex justify-end pt-4">
+        <button type="submit" class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-6 py-3 rounded-xl shadow-md hover:shadow-xl transition-all font-semibold">
+          Submit Assessment <i class="fas fa-check ml-2"></i>
+        </button>
+      </div>
+    </form>
+
+    <!-- Info -->
+    <div class="bg-white rounded-2xl shadow-lg p-6 mb-8">
+      <h3 class="text-xl font-bold text-indigo-600 mb-4">About This Assessment</h3>
+      <p class="text-gray-600 mb-3">This self-assessment helps identify your strengths, preferences, and areas for development. Be honest with your responses for the most accurate results.</p>
+      <p class="text-gray-600">Your answers are confidential and will only be used to generate personalized recommendations.</p>
+    </div>
+  </div>
+
+  <footer class="max-w-6xl mx-auto px-4 py-6 text-center text-gray-600 text-sm">
+    <p>© 2025 SkillAssess. All rights reserved.</p>
+  </footer>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      const total = {{ questions|length }};
+      const progressFill = document.getElementById("progress-fill");
+      const progressCount = document.getElementById("progress-count");
+
+      function updateProgress() {
+        const answered = new Set([...document.querySelectorAll('input[type="radio"]:checked')].map(r => r.name)).size;
+        progressCount.textContent = answered;
+        progressFill.style.width = `${(answered/total)*100}%`;
+      }
+
+      // Attach event listeners to all radio buttons
+      document.querySelectorAll('input[type="radio"]').forEach(radio => {
+        radio.addEventListener("change", updateProgress);
+      });
+
+      // Optional: check progress on page load in case of pre-filled answers
+      updateProgress();
+    });
+  </script>
+</body>
+</html>
+`
