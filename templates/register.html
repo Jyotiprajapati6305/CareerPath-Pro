@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Register - CareerPath Pro</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-indigo-50 via-white to-purple-50 min-h-screen flex items-center justify-center">
+
+  <div class="bg-white rounded-3xl shadow-2xl p-10 w-full max-w-md">
+    <h1 class="text-3xl font-bold text-indigo-600 mb-6 text-center">Register</h1>
+
+    <form method="POST" action="{{ url_for('register') }}">
+      <!-- First Name -->
+      <input type="text" name="first_name" placeholder="First Name" required
+             class="w-full mb-4 p-3 border rounded-lg">
+
+      <!-- Last Name -->
+      <input type="text" name="last_name" placeholder="Last Name" required
+             class="w-full mb-4 p-3 border rounded-lg">
+
+      <!-- Phone Number -->
+      <input type="tel" name="phone" placeholder="Phone Number" pattern="[0-9]{10}" required
+             class="w-full mb-4 p-3 border rounded-lg"
+             title="Phone number must be 10 digits">
+
+      <!-- Email -->
+      <input type="email" name="email" placeholder="Email" required
+             class="w-full mb-4 p-3 border rounded-lg">
+
+      <!-- Password -->
+      <input type="password" name="password" placeholder="Password" required
+             class="w-full mb-4 p-3 border rounded-lg">
+
+      <!-- Confirm Password -->
+      <input type="password" name="confirm_password" placeholder="Confirm Password" required
+             class="w-full mb-6 p-3 border rounded-lg">
+
+      <button type="submit"
+              class="w-full bg-indigo-600 text-white p-3 rounded-lg hover:bg-indigo-700 transition">
+        Register
+      </button>
+    </form>
+
+    <p class="text-sm text-gray-500 mt-4 text-center">
+      Already have an account? <a href="{{ url_for('login') }}" class="text-indigo-600">Login</a>
+    </p>
+  </div>
+
+  <script>
+    // Optional: Frontend validation for matching passwords
+    const form = document.querySelector('form');
+    form.addEventListener('submit', function(event) {
+      const password = form.password.value;
+      const confirmPassword = form.confirm_password.value;
+      if(password !== confirmPassword) {
+        alert("Passwords do not match!");
+        event.preventDefault();
+      }
+    });
+  </script>
+
+</body>
+</html>

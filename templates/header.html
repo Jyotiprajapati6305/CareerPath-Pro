@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Header Component</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .hero-gradient {
+      background: linear-gradient(135deg, #4f46e5, #9333ea);
+    }
+    .gradient-text {
+      background: linear-gradient(to right, #6366f1, #a855f7);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .glass-card {
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    .nav-tab.active {
+      background-color: rgba(139, 92, 246, 0.1);
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="hero-gradient text-white flex">
+    <div class="container mx-auto px-6 py-6 flex items-center justify-between">
+      <!-- Logo + Title -->
+      <div class="flex items-center space-x-4">
+        <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+          <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-3xl font-bold gradient-text">CareerPath Pro</h1>
+          <p class="text-white/80 text-sm">Your Journey to Success</p>
+        </div>
+      </div>
+
+      <!-- User/Auth Buttons -->
+     <!-- User/Auth Buttons -->
+<div class="glass-card rounded-xl px-6 py-3 flex items-center space-x-4">
+  {% if current_user.is_authenticated %}
+    <div class="text-right">
+      <p class="font-semibold">Welcome, {{ current_user.first_name }}!</p>
+      <p class="text-sm text-white/80">Member</p>
+    </div>
+    <div class="w-12 h-12 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center text-white font-bold shadow-lg">
+      {{ current_user.first_name[0]|upper }}
+    </div>
+    <a href="{{ url_for('logout') }}" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition">
+      Logout
+    </a>
+  {% else %}
+    <a href="{{ url_for('login') }}" class="px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition">
+      Login
+    </a>
+    <a href="{{ url_for('register') }}" class="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition">
+      Register
+    </a>
+  {% endif %}
+</div>
+
+    </div>
+  </header>
+
+  <!-- Navigation Tabs -->
+  <nav class="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-white/20">
+    <div class="container mx-auto px-6">
+      <div class="flex justify-center space-x-1">
+
+        <a href="{{ url_for('dashboard') }}" 
+           class="nav-tab {% if request.endpoint == 'dashboard' %}active{% endif %} px-6 py-4 font-medium transition-all duration-300 hover:bg-purple-50 rounded-t-lg">
+          <div class="flex items-center space-x-2">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M3 4a1 极 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1极6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"/>
+            </svg>
+            <span>Dashboard</span>
+          </div>
+        </a>
+
+        <a href="{{ url_for('assessment') }}" 
+           class="nav-tab {% if request.endpoint == 'assessment' %}active{% endif %} px-6 py-4 font-medium transition-all duration-300 hover:bg-purple-50 rounded-t-lg">
+          <div class="flex items-center space-x-2">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <span>Assessment</span>
+          </div>
+        </a>
+
+        <a href="{{ url_for('jobs') }}" 
+           class="nav-tab {% if request.endpoint == 'jobs' %}active{% endif %} px-6 py-4 font-medium transition-all duration-300 hover:bg-purple-50 rounded-t-lg">
+          <div class="flex items-center space-x-2">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M13 6a3 3 0 11-6 极 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 极 014 0极M14 15a4 4 0 00-8 0v3h8v-3z"/>
+            </svg>
+            <span>Jobs</span>
+          </div>
+        </a>
+
+        <a href="{{ url_for('resume') }}" 
+           class="nav-tab {% if request.endpoint == 'resume' %}active{% endif %} px-6 py-4 font-medium transition-all duration-300 hover:bg-purple-50 rounded-t-lg">
+          <div class="flex items-center space-x-2">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/>
+              <path fill-rule="evenodd" d="M4 5a2 2 0 012-2v1a1 1 0 102 0V3a2 2 0 012 2v6a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm2.5 7a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" clip-rule="evenodd"/>
+            </svg>
+            <span>Resume</span>
+          </div>
+        </a>
+
+        <a href="{{ url_for('skills') }}" 
+           class="nav-tab {% if request.endpoint == 'skills' %}active{% endif %} px-6 py-4 font-medium transition-all duration-300 hover:bg-purple-50 rounded-t-lg">
+          <div class="flex items-center space-x-2">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+            </svg>
+            <span>Skills</span>
+          </div>
+        </a>
+
+      </div>
+    </div>
+  </nav>
+</body>
+</html>

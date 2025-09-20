@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-Powered Job Recommendations</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('极ttps://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+        }
+        
+        .job-card {
+            transition: all 0.3s ease;
+            border-left: 4px solid #4f46e5;
+        }
+        
+        .job-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        
+        .ai-recommendation {
+            background: linear-gradient(to right, #e0e7ff, #ddd6fe);
+            border-left: 4px solid #8b5cf6;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .ai-recommendation::before {
+            content: "✨";
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 24px;
+            opacity: 0.2;
+        }
+        
+        .search-box {
+            background: linear-gradient(to right, #ffffff, #f9fafb);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.8s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .gradient-text {
+            background: linear-gradient(135deg, #4f46e5 0%, #8b5cf6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .stats-card {
+            background: linear-gradient(to right, #ffffff, #f8fafc);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+    </style>
+</head>
+<body class="antialiased">
+    {% include 'header.html' %}
+
+    <div class="container mx-auto px-6 py-10 max-w-6xl">
+        <h2 class="text-4xl font-bold text-center mb-8 gradient-text fade-in">
+            🚀 AI-Powered Job Recommendations
+        </h2>
+
+        <!-- Search Form - Always visible at the top -->
+        <form method="POST" class="flex flex-col md:flex-row gap-4 mb-8 search-box p-6 rounded-2xl fade-in">
+            <input type="text" name="interest" placeholder="Job Role (e.g. Data Scientist)"
+                   class="border border-gray-200 p-3 rounded-xl flex-1 focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition"
+                   value="{{ search_query or '' }}" required>
+            <input type="text" name="location" placeholder="Location (e.g. Bangalore)"
+                   class="border border-gray-200 p-3 rounded-xl flex-1 focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition"
+                   value="{{ search_location or '' }}" required>
+            <button type="submit"
+                    class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-xl hover:opacity-90 transition pulse">
+                🔍 Search Jobs
+            </button>
+        </form>
+
+        <!-- Quick Stats - Show only when there are results -->
+        {% if jobs or ai_recommendation %}
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 fade-in">
+            <div class="stats-card p-4 text-center">
+                <div class="text-2xl font-bold text-indigo-600">{{ jobs|length if jobs else 0 }}</div>
+                <div class="text-gray-600">Jobs Found</div>
+            </div>
+            <div class="stats-card p-4 text-center">
+                <div class="text-2xl font-bold text-indigo-600">{{ (search_query or "Your Field")|title }}</div>
+                <div class="text-gray-600">Job Role</div>
+            </div>
+            <div class="stats-card p-4 text-center">
+                <div class="text-2xl font-bold text-indigo-600">{{ (search_location or "Your Location")|title }}</div>
+                <div class="text-gray-600">Location</div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- AI Recommendation - Show if available -->
+        {% if ai_recommendation %}
+        <div class="ai-recommendation p-6 rounded-2xl mb-8 shadow-inner fade-in">
+            <h3 class="text-xl font-semibold text-purple-700 mb-3 flex items-center">
+                <span class="mr-2">✨</span> AI Career Suggestions
+            </h3>
+            <ul class="list-disc list-inside text-gray-800 leading-relaxed">
+                {% for point in ai_recommendation %}
+                    <li>{{ point }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        <!-- Jobs List - Show if available -->
+        {% if jobs %}
+        <div class="fade-in">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-semibold text-gray-800">Recommended Jobs For You</h3>
+                <span class="text-sm text-gray-500">{{ jobs|length }} positions found</span>
+            </div>
+            
+            <div class="grid md:grid-cols-2 lg:grid-cols-2 gap-6">
+                {% for job in jobs %}
+                <div class="job-card bg-white p-6 rounded-2xl shadow-md fade-in" style="animation-delay: {{ loop.index * 0.1 }}s">
+                    <h3 class="text-lg font-bold text-indigo-600 mb-2">{{ job.title }}</h3>
+                    <p class="text-gray-700 mb-1"><strong>Company:</strong> {{ job.company }}</p>
+                    <p class="text-gray-500 mb-2"><strong>Location:</strong> {{ job.location }}</p>
+                    <p class="text-gray-500 text-sm mb-4"><strong>Posted:</strong> 2 days ago</p>
+                    <a href="{{ job.link }}" target="_blank"
+                       class="block mt-3 text-center bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition">
+                        Apply Now
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- No Results Message -->
+        {% if not jobs and search_query %}
+        <div class="text-center mt-8 fade-in">
+            <div class="text-6xl mb-4">😕</div>
+            <p class="text-gray-600 text-lg">No jobs found for "{{ search_query }}" in "{{ search_location }}".</p>
+            <p class="text-gray-500 mt-2">Try different keywords or location</p>
+            
+            <!-- Alternative Search Suggestions -->
+            <div class="mt-6 p-4 bg-indigo-50 rounded-lg max-w-md mx-auto">
+                <p class="text-indigo-800 font-medium mb-2">Try searching for:</p>
+                <div class="flex flex-wrap gap-2 justify-center">
+                    <a href="?interest=Software+Developer&location={{ search_location }}" class="px-3 py-1 bg-white text-indigo-600 rounded-full text-sm shadow-sm hover:bg-indigo-100 transition">
+                        Software Developer
+                    </a>
+                    <a href="?interest=Data+Analyst&location={{ search_location }}" class="px-3 py-1 bg-white text-indigo-600 rounded-full text-sm shadow-sm hover:bg-indigo-100 transition">
+                        Data Analyst
+                    </a>
+                    <a href="?interest=Project+Manager&location={{ search_location }}" class="px-3 py-1 bg-white text-indigo-600 rounded-full text-sm shadow-sm hover:bg-indigo-100 transition">
+                        Project Manager
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Loading Animation -->
+        <div id="loading" class="hidden text-center py-10">
+            <div class="animate-spin h-12 w-12 border-4 border-indigo-400 border-t-transparent rounded-full mx-auto"></div>
+            <p class="mt-4 text-indigo-600 font-medium">Fetching the best job recommendations for you...</p>
+        </div>
+    </div>
+
+    <script>
+        // Show loader when submitting search form
+        const form = document.querySelector("form");
+        const loading = document.getElementById("loading");
+        if (form) {
+            form.addEventListener("submit", () => {
+                loading.classList.remove("hidden");
+                document.querySelector('.pulse').classList.remove('pulse');
+            });
+        }
+        
+        // Add fade-in animation to elements as they come into view
+        document.addEventListener('DOMContentLoaded', function() {
+            const fadeElements = document.querySelectorAll('.fade-in');
+            
+            const fadeInOptions = {
+                threshold: 0.1,
+                rootMargin: "0px 0px -50px 0px"
+            };
+            
+            const fadeInObserver = new IntersectionObserver(function(entries, observer) {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.opacity = 1;
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, fade极Options);
+            
+            fadeElements.forEach(element => {
+                element.style.opacity = 0;
+                element.style.transition = 'opacity 0.5s ease-in-out';
+                fadeInObserver.observe(element);
+            });
+        });
+    </script>
+</body>
+</html>

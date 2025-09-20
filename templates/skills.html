@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Skills Assessment - CareerPath Pro</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  .hero-gradient {
+    background: linear-gradient(135deg, #4f46e5, #9333ea);
+  }
+  .gradient-text {
+    background: linear-gradient(to right, #6366f1, #a855f7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .domain-card {
+    transition: all 0.3s ease-in-out;
+  }
+  .domain-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+  }
+  .ai-box {
+    background: linear-gradient(to right, #eef2ff, #f3e8ff);
+    border-left: 4px solid #6366f1;
+  }
+  input[type="radio"] {
+    accent-color: #6366f1;
+  }
+</style>
+</head>
+<body class="bg-gradient-to-br from-indigo-50 via-white to-purple-50 min-h-screen flex flex-col">
+
+{% include 'header.html' %}
+
+<main class="container mx-auto px-6 py-10 flex-grow">
+  <h2 class="text-3xl font-bold text-indigo-800 mb-8 text-center">Choose Your Domain</h2>
+
+  <!-- Assessment Section -->
+  <div id="assessmentBox" class="mt-10 hidden p-8 bg-white rounded-2xl shadow-lg border border-indigo-100 max-w-3xl mx-auto">
+    <h3 class="text-2xl font-bold text-indigo-700 mb-6">Domain Assessment</h3>
+    <form id="assessmentForm" method="POST" action="/skills">
+      <input type="hidden" name="domain" id="selectedDomain" />
+      <div id="questionsArea" class="space-y-6">
+        <!-- Questions will be injected here dynamically -->
+      </div>
+      <div class="text-center mt-6">
+        <button type="submit" class="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-xl shadow-md hover:shadow-xl transition-all">
+          🚀 Get Career Suggestions
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- AI Suggestions -->
+  {% if ai_suggestions %}
+  <div class="mt-6 p-6 ai-box rounded-xl max-w-3xl mx-auto">
+    <h4 class="font-semibold text-indigo-800 text-lg mb-3">AI Suggestions:</h4>
+    <div class="text-gray-800 whitespace-pre-wrap">{{ ai_suggestions }}</div>
+  </div>
+  {% endif %}
+  <!-- Domain Grid -->
+  <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 text-center max-w-7xl mx-auto">
+    {% for domain in ["Entertainment", "Sports", "Government", "Marketing", "Art", "Technical", "Medical", "Engineering", "Commerce", "Game Development", "Digital & IT", "Business & Management", "Personal Development", "Creative & Design", "Health & Wellness"] %}
+    <div onclick="loadAssessment('{{ domain }}')" class="domain-card cursor-pointer bg-white p-6 rounded-2xl shadow-md border border-gray-200 hover:border-indigo-400">
+      <div class="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-indigo-500 to-purple-500 text-white rounded-full flex items-center justify-center text-xl font-bold">
+        {{ domain[0] }}
+      </div>
+      <h3 class="text-lg font-semibold text-gray-800">{{ domain }}</h3>
+    </div>
+    {% endfor %}
+  </div>
+
+</main>
+
+<script>
+async function loadAssessment(domain) {
+  const assessmentBox = document.getElementById("assessmentBox");
+  const questionsArea = document.getElementById("questionsArea");
+  const selectedDomain = document.getElementById("selectedDomain");
+
+  assessmentBox.classList.remove("hidden");
+  questionsArea.innerHTML = "<p class='text-gray-500'>Loading questions...</p>";
+  selectedDomain.value = domain;
+
+  try {
+    const response = await fetch(`/skills/questions?domain=${encodeURIComponent(domain)}`);
+    if (!response.ok) throw new Error("HTTP error " + response.status);
+    const data = await response.json();
+
+    questionsArea.innerHTML = "";
+    data.questions.forEach((q, i) => {
+      questionsArea.innerHTML += `
+        <div class="mb-6">
+          <label class="block text-lg font-semibold text-gray-800 mb-3">${q}</label>
+          <div class="flex flex-col sm:flex-row sm:flex-wrap gap-4">
+            <label class="flex items-center gap-2"><input type="radio" name="q${i+1}" value="5" required> Strongly Like</label>
+            <label class="flex items-center gap-2"><input type="radio" name="q${i+1}" value="4"> Like</label>
+            <label class="flex items-center gap-2"><input type="radio" name="q${i+1}" value="3"> Neutral</label>
+            <label class="flex items-center gap-2"><input type="radio" name="q${i+1}" value="2"> Dislike</label>
+            <label class="flex items-center gap-2"><input type="radio" name="q${i+1}" value="1"> Strongly Dislike</label>
+          </div>
+        </div>
+      `;
+    });
+  } catch (err) {
+    console.error("Error fetching questions:", err);
+    questionsArea.innerHTML = "<p class='text-red-500'>Failed to load questions. Please try again later.</p>";
+  }
+}
+</script>
+</body>
+</html>
