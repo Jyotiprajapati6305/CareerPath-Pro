@@ -9,14 +9,12 @@ import docx
 from PIL import Image
 import pytesseract
 from pdf2image import convert_from_path
-import google.generativeai as genai
 from dotenv import load_dotenv
 import json
 import datetime
 from linkedin_scraper import fetch_linkedin_jobs
 import re
-from werkzeug.security import check_password_hash
-from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.security import check_password_hash, generate_password_hash
 
 # ------------------------
 # App Config
@@ -42,7 +40,6 @@ db = SQLAlchemy(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = "login"
-
 
 # ------------------------
 # Models
@@ -74,9 +71,6 @@ class Assessment(db.Model):
     avg_score = db.Column(db.Float, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
 
-# ------------------------
-# Resume Model
-# ------------------------
 class Resume(db.Model):
     __tablename__ = "resume"
     id = db.Column(db.Integer, primary_key=True)
@@ -95,19 +89,14 @@ def load_user(user_id):
 # Google Gemini Setup
 # ------------------------
 NUM_QUESTIONS = 10
-genai.configure(api_key="AIzaSyAlFXGGzxuDYbB_JIe7EHPbtzUJKgTVVys")  # Replace with your key
-CATEGORIES = ["Creativity", "Public Speaking","Mathemetics","Leadership","Management"]
+genai.configure(api_key=GOOGLE_GENAI_API_KEY)
+CATEGORIES = ["Creativity", "Public Speaking", "Mathemetics", "Leadership", "Management"]
 QUESTION_CATEGORY_MAP = {i: i % len(CATEGORIES) for i in range(NUM_QUESTIONS)}
 
 # ------------------------
 # Helpers
 # ------------------------
-
 def generate_questions(domain="General", num_questions=NUM_QUESTIONS):
-    """
-    Ask the model for `num_questions` concise self-assessment questions.
-    Returns a list of exactly `num_questions` strings (pads with fallbacks if needed).
-    """
     model = genai.GenerativeModel("gemini-2.5-flash")
     prompt = (
         f"Generate {num_questions} concise self-assessment questions for the domain '{domain}'.\n"
@@ -116,17 +105,14 @@ def generate_questions(domain="General", num_questions=NUM_QUESTIONS):
     response = model.generate_content(prompt)
     raw = (response.text or "").strip()
 
-    # clean up lines (remove leading numbering/bullet characters)
     lines = []
     for line in raw.splitlines():
         line = re.sub(r'^[\s\-\•\d\.\)\(]+', '', line).strip()
         if line:
             lines.append(line)
 
-    # keep only reasonable lines
     questions = [q for q in lines if len(q) > 5]
 
-    # Fallback: if model returned fewer than requested, generate reasonable template questions to fill up
     if len(questions) < num_questions:
         needed = num_questions - len(questions)
         fallback = []
@@ -136,13 +122,6 @@ def generate_questions(domain="General", num_questions=NUM_QUESTIONS):
         questions.extend(fallback)
 
     return questions[:num_questions]
-
-# def generate_questions(domain="General"):
-#     model = genai.GenerativeModel("gemini-2.5-flash")
-#     prompt = f"Generate 15 self-assessment questions for the domain '{domain}'. Only return the question text."
-#     response = model.generate_content(prompt)
-#     questions = [q.strip("•-1234567890.() ") for q in response.text.strip().split("\n") if q.strip()]
-#     return questions[:10]
 
 def generate_career_suggestions(answers, domain="General"):
     model = genai.GenerativeModel("gemini-2.5-flash")
@@ -156,7 +135,6 @@ def generate_dynamic_insights(category_scores):
     try:
         return json.loads(response.text)
     except:
-        # fallback
         insights = {}
         for cat, score in category_scores.items():
             if score >= 4:
@@ -166,12 +144,20 @@ def generate_dynamic_insights(category_scores):
             else:
                 insights[cat] = ["Needs Improvement", "💡 Focus on basics."]
         return insights
+
 def format_assessment_results(category_scores, insights):
     formatted = []
     for cat, score in category_scores.items():
         label, suggestion = insights.get(cat, ["N/A", "No suggestion"])
         formatted.append(f"{cat} — {label} ({score*100:.0f}%)\n💡 Suggestion: {suggestion}")
     return "\n\n".join(formatted)
+
+# ------------------------
+# Ensure tables are created before first request
+# ------------------------
+@app.before_first_request
+def create_tables():
+    db.create_all()
 
 # ------------------------
 # Routes
@@ -183,24 +169,16 @@ def home():
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    # Fetch user-specific assessment data
     user_results = Assessment.query.filter_by(user_id=current_user.id).first()
-    
-    # Example structure: { 'Technical': 80, 'Marketing': 60, 'Design': 40 }
     results = {}
     if user_results:
-        # Assuming you store data as JSON or separate columns
-        results = user_results.scores  # e.g., JSON: {"Technical":80, "Marketing":60, ...}
-
+        results = user_results.scores
     return render_template('index.html', assessment_results=results)
-# ------------------------
-# Assessment Routes
-# ------------------------
+
 @app.route("/assessment", methods=["GET", "POST"])
 @login_required
 def assessment():
     if request.method == "POST":
-        # ensure we read answers in order q1..qN
         answers = []
         for i in range(1, NUM_QUESTIONS + 1):
             val = request.form.get(f"q{i}")
@@ -213,7 +191,6 @@ def assessment():
                 flash("Please provide numeric values for all questions.", "danger")
                 return redirect(url_for("assessment"))
 
-        # 2️⃣ Calculate category-wise scores
         category_totals = {cat: [] for cat in CATEGORIES}
         for idx, ans in enumerate(answers):
             cat_index = QUESTION_CATEGORY_MAP.get(idx, 0)
@@ -221,14 +198,9 @@ def assessment():
             category_totals[cat].append(ans)
 
         category_scores = {cat: (sum(vals)/len(vals) if vals else 0) for cat, vals in category_totals.items()}
-
-        # 3️⃣ Generate insights
         insights = generate_dynamic_insights(category_scores)
-
-        # 4️⃣ Calculate average score
         avg_score = sum(answers) / len(answers)
 
-        # 5️⃣ Store in database
         try:
             new_assessment = Assessment(
                 user_id=current_user.id,
@@ -246,14 +218,11 @@ def assessment():
             flash(f"Error saving assessment: {str(e)}", "danger")
             return redirect(url_for("assessment"))
 
-        # 6️⃣ Render results
         return render_template("results.html", scores=answers, category_scores=category_scores, avg=avg_score, insights=insights)
 
-    # GET request: generate questions (now requests NUM_QUESTIONS)
     domain = request.args.get("domain", "General")
     questions = generate_questions(domain, NUM_QUESTIONS)
     return render_template("assessment.html", questions=questions, domain=domain)
-
 
 @app.route("/my_assessments")
 @login_required
@@ -261,38 +230,31 @@ def my_assessments():
     assessments = Assessment.query.filter_by(user_id=current_user.id).order_by(Assessment.created_at.desc()).all()
     return render_template("my_assessments.html", assessments=assessments)
 
-# ------------------------
-# Skills
-# ------------------------
 @app.route("/skills", methods=["GET","POST"])
 @login_required
 def skills():
     ai_suggestions, questions = None, []
     domain = request.form.get("domain") or request.args.get("domain") or "General"
+    questions = generate_questions(domain)
 
-    # Generate domain-specific questions dynamically
-    questions = generate_questions(domain)  # AI-powered, dynamic questions
-
-    if request.method=="POST":
+    if request.method == "POST":
         answers = {k:v for k,v in request.form.items() if k.startswith("q")}
         if answers:
             ai_suggestions = generate_career_suggestions(answers, domain)
 
     return render_template("skills.html", ai_suggestions=ai_suggestions, questions=questions, selected_domain=domain)
+
 @app.route("/skills/questions")
 @login_required
 def skills_questions():
     domain = request.args.get("domain", "General")
     try:
         questions = generate_questions(domain)
-        return {"questions": questions}  # JSON response
+        return {"questions": questions}
     except Exception as e:
         print(f"[Error generating questions]: {e}")
         return {"questions": []}, 500
 
-# ------------------------
-# Jobs
-# ------------------------
 @app.route("/jobs", methods=["GET", "POST"])
 @login_required
 def jobs():
@@ -300,19 +262,14 @@ def jobs():
     search_location = ""
     ai_recommendation = []
     jobs_data = []
-
-    # Optional: set default max jobs to fetch
     MAX_JOBS = 20
-    LINKEDIN_TOKEN = "WPL_AP1.rcR3rAALewpIb6id.OcUjOw=="  # Replace if needed
 
     if request.method == "POST":
-        # Get user input
         search_query = request.form.get("interest", "").strip()
         search_location = request.form.get("location", "").strip()
 
         if search_query and search_location:
             try:
-                # Fetch LinkedIn jobs with scrolling
                 jobs_data = fetch_linkedin_jobs(
                     query=search_query,
                     location=search_location,
@@ -323,18 +280,13 @@ def jobs():
                 jobs_data = []
 
             try:
-                # Generate AI career suggestions
                 model = genai.GenerativeModel("gemini-2.5-flash")
                 prompt = (
                     f"Give 8 concise career suggestions for '{search_query}' in "
                     f"'{search_location}', each as a bullet point, properly formatted."
                 )
                 ai_text = model.generate_content(prompt).text
-
-                # Convert AI text to list of bullet points
-                ai_recommendation = [
-                    line.strip(" -•") for line in ai_text.split("\n") if line.strip()
-                ]
+                ai_recommendation = [line.strip(" -•") for line in ai_text.split("\n") if line.strip()]
             except Exception as e:
                 print(f"[Error generating AI recommendations]: {e}")
                 ai_recommendation = []
@@ -347,29 +299,24 @@ def jobs():
         ai_recommendation=ai_recommendation
     )
 
-# ------------------------
-# Resume
-# ------------------------
-
 @app.route("/resume", methods=["GET", "POST"])
 @login_required
 def resume():
-    ai_result_list = []      # AI resume analysis suggestions
-    jobs_data = []           # Real-time LinkedIn jobs
+    ai_result_list = []
+    jobs_data = []
     error_message = None
     tutorial_tips = None
-    content = ""             # Extracted resume text
+    content = ""
 
     if request.method == "POST":
         file = request.files.get("resume_file")
-        get_tips = request.form.get("get_tips")  # Resume tips button
+        get_tips = request.form.get("get_tips")
 
         if file and file.filename != "":
             filename = secure_filename(file.filename)
             file_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
             file.save(file_path)
 
-            # ----------------- Store resume in DB -----------------
             try:
                 with open(file_path, "rb") as f:
                     file_data = f.read()
@@ -389,41 +336,31 @@ def resume():
             content = ""
 
             try:
-                # ------------------ PDF ------------------
                 if ext == "pdf":
                     pdf_reader = PyPDF2.PdfReader(file_path)
                     for page in pdf_reader.pages:
                         text = page.extract_text()
                         if text and text.strip():
                             content += text + "\n"
-
-                    # Fallback for scanned PDFs
                     if not content.strip():
                         images = convert_from_path(file_path)
                         for img in images:
                             content += pytesseract.image_to_string(img) + "\n"
-
-                # ------------------ DOC / DOCX ------------------
                 elif ext in ["doc", "docx"]:
                     doc_file = docx.Document(file_path)
                     content = "\n".join([para.text for para in doc_file.paragraphs if para.text.strip()])
-
-                # ------------------ IMAGE ------------------
                 elif ext in ["jpg", "jpeg", "png"]:
                     img = Image.open(file_path)
                     content = pytesseract.image_to_string(img)
-
                 else:
                     error_message = "Unsupported file type."
 
                 content = re.sub(r'\n+', '\n', content).strip()
                 if not content and not error_message:
                     error_message = "No readable text found in the resume."
-
             except Exception as e:
                 error_message = f"Error processing file: {str(e)}"
 
-            # ----------------- AI Resume Analysis -----------------
             if content and not error_message:
                 try:
                     model = genai.GenerativeModel("gemini-2.5-flash")
@@ -438,7 +375,6 @@ def resume():
                     ai_text = model.generate_content(prompt).text
                     ai_result_list = [line.strip(" -•") for line in ai_text.split("\n") if line.strip()]
 
-                    # ----------------- Extract Skills & Roles -----------------
                     skills, roles = [], []
                     for line in ai_result_list:
                         if "skill" in line.lower() or "strength" in line.lower():
@@ -449,20 +385,17 @@ def resume():
                     skills = list(set([s.strip() for s in skills if len(s.strip()) > 2]))
                     roles = list(set([r.strip() for r in roles if len(r.strip()) > 2]))
 
-                    # Build query for jobs (roles + skills)
                     search_query = ", ".join(roles[:2] + skills[:3])
 
                     if search_query:
                         jobs_data = fetch_linkedin_jobs(
                             query=search_query,
-                            location="India",   # ✅ can make dynamic
+                            location="India",
                             max_results=10
                         )
-
                 except Exception as e:
                     error_message = f"AI analysis or job fetching failed: {str(e)}"
 
-            # ----------------- Resume Tips -----------------
             if get_tips and content:
                 try:
                     model = genai.GenerativeModel("gemini-2.5-flash")
@@ -480,12 +413,6 @@ def resume():
         resume_content=content
     )
 
-# ✅ Improvements
-
-# ------------------------
-# Auth Routes
-# ------------------------
-
 @app.route("/register", methods=["GET", "POST"])
 def register():
     if request.method == "POST":
@@ -496,7 +423,6 @@ def register():
         password = request.form.get("password", "")
         confirm_password = request.form.get("confirm_password", "")
 
-        # 1️⃣ Backend validations
         if password != confirm_password:
             flash("Passwords do not match", "danger")
             return redirect(url_for("register"))
@@ -513,7 +439,6 @@ def register():
             flash("Phone number already registered", "danger")
             return redirect(url_for("register"))
 
-        # 2️⃣ Everything is valid — create user
         hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
         new_user = User(
             first_name=first_name,
@@ -533,7 +458,6 @@ def register():
             flash(f"Error saving user: {str(e)}", "danger")
             return redirect(url_for("register"))
 
-    # GET request
     return render_template("register.html")
 
 @app.route("/login", methods=["GET","POST"])
@@ -542,12 +466,10 @@ def login():
         email = request.form.get("email")
         password = request.form.get("password")
 
-        # Validate input
         if not email or not password:
             flash("Please enter both email and password", "danger")
             return redirect(url_for("login"))
 
-        # Find user
         user = User.query.filter_by(email=email).first()
         if user and check_password_hash(user.password, password):
             login_user(user)
@@ -559,7 +481,6 @@ def login():
 
     return render_template("login.html")
 
-
 @app.route("/logout")
 @login_required
 def logout():
@@ -570,8 +491,10 @@ def logout():
 # Run App
 # ------------------------
 if __name__ == "__main__":
+    # Create all tables before starting the server locally
     with app.app_context():
         db.create_all()
         print("Tables should now be created:", db.inspect(db.engine).get_table_names())
-    app.run(debug=True)
-    # app.run(host="0.0.0.0", port=5000, debug=True)
+    import os
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=True)
