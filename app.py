@@ -10,6 +10,7 @@ from PIL import Image
 import pytesseract
 from pdf2image import convert_from_path
 import google.generativeai as genai
+from dotenv import load_dotenv
 
 import json
 import datetime
@@ -28,8 +29,15 @@ BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 # Upload folder setup
 app.config["UPLOAD_FOLDER"] = "uploads"
 os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
+load_dotenv()
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:Jyoti%40123@localhost:5432/app'
+DB_USER = os.getenv("DB_USER")
+DB_PASSWORD = os.getenv("DB_PASSWORD")
+DB_HOST = os.getenv("DB_HOST")
+DB_PORT = os.getenv("DB_PORT")
+DB_NAME = os.getenv("DB_NAME")
+
+app.config['SQLALCHEMY_DATABASE_URI'] = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config["UPLOAD_FOLDER"] = "uploads"
