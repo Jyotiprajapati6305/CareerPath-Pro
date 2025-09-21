@@ -11,7 +11,6 @@ import pytesseract
 from pdf2image import convert_from_path
 import google.generativeai as genai
 from dotenv import load_dotenv
-
 import json
 import datetime
 from linkedin_scraper import fetch_linkedin_jobs
@@ -22,35 +21,28 @@ from werkzeug.security import generate_password_hash, check_password_hash
 # ------------------------
 # App Config
 # ------------------------
-
-app = Flask(__name__)
-app.secret_key = "supersecretkey"  # ⚠️ Cha nge in production
-BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-# Upload folder setup
-app.config["UPLOAD_FOLDER"] = "uploads"
-os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 load_dotenv()
 
-DB_USER = os.getenv("DB_USER")
-DB_PASSWORD = os.getenv("DB_PASSWORD")
-DB_HOST = os.getenv("DB_HOST")
-DB_PORT = os.getenv("DB_PORT")
-DB_NAME = os.getenv("DB_NAME")
+FLASK_SECRET_KEY = os.getenv("FLASK_SECRET_KEY", "fallback_secret")
+DATABASE_URL = os.getenv("DATABASE_URL")
+GOOGLE_GENAI_API_KEY = os.getenv("GOOGLE_GENAI_API_KEY")
+LINKEDIN_TOKEN = os.getenv("LINKEDIN_TOKEN")
 
-app.config['SQLALCHEMY_DATABASE_URI'] = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+# ------------------------
+# Flask app setup
+# ------------------------
+app = Flask(__name__)
+app.secret_key = FLASK_SECRET_KEY
 app.config["UPLOAD_FOLDER"] = "uploads"
 os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
+app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
-
-# ------------------------
-# Flask-Login Setup
-# ------------------------
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = "login"
+
 
 # ------------------------
 # Models
@@ -581,5 +573,5 @@ if __name__ == "__main__":
     with app.app_context():
         db.create_all()
         print("Tables should now be created:", db.inspect(db.engine).get_table_names())
-    # app.run(debug=True)
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(debug=True)
+    # app.run(host="0.0.0.0", port=5000, debug=True)
