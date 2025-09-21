@@ -155,9 +155,15 @@ def format_assessment_results(category_scores, insights):
 # ------------------------
 # Ensure tables are created before first request
 # ------------------------
-@app.before_first_request
-def create_tables():
-    db.create_all()
+tables_created = False
+
+@app.before_request
+def create_tables_once():
+    global tables_created
+    if not tables_created:
+        db.create_all()
+        tables_created = True
+
 
 # ------------------------
 # Routes
