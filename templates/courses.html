@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Courses - SkillDev</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding-bottom: 50px;
+        }
+
+        .courses-header {
+            background: white;
+            border-radius: 20px;
+            padding: 50px 40px;
+            margin: 30px 0;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+            text-align: center;
+        }
+
+        .courses-header h1 {
+            color: #1f2937;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .courses-header .lead {
+            color: #6b7280;
+            font-size: 1.2rem;
+        }
+
+        .stream-section {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            margin-bottom: 40px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            animation: fadeInUp 0.6s ease;
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .stream-title {
+            color: #667eea;
+            border-bottom: 4px solid #667eea;
+            padding-bottom: 15px;
+            margin-bottom: 30px;
+            font-weight: bold;
+            font-size: 2rem;
+        }
+
+        .course-card {
+            border: none;
+            border-radius: 15px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            height: 100%;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .course-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+        }
+
+        .course-header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 30px 25px;
+        }
+
+        .course-header h4 {
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .course-meta {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .course-level {
+            background: rgba(255,255,255,0.25);
+            padding: 8px 18px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+
+        .course-body {
+            padding: 30px 25px;
+        }
+
+        .module-list {
+            background: #f9fafb;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            max-height: 180px;
+            overflow-y: auto;
+        }
+
+        .module-item {
+            padding: 10px;
+            border-bottom: 1px solid #e5e7eb;
+            font-size: 0.9rem;
+        }
+
+        .skill-badge {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            margin: 5px;
+            display: inline-block;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 25px;
+        }
+
+        .btn-primary-custom {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            color: white;
+            padding: 14px 0;
+            border-radius: 12px;
+            font-weight: 600;
+            flex: 1;
+        }
+
+        .btn-outline-custom {
+            border: 2px solid #667eea;
+            color: #667eea;
+            padding: 14px 0;
+            border-radius: 12px;
+            font-weight: 600;
+            flex: 1;
+            background: white;
+        }
+
+        .btn-outline-custom:hover {
+            background: #667eea;
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+{% include 'navbar.html' %}
+
+<div class="container my-5">
+    <div class="courses-header">
+        <h1><i class="fas fa-graduation-cap"></i> Explore Our Courses</h1>
+        <p class="lead">Learn freely — no enrollment required</p>
+    </div>
+
+    {% for stream, courses in courses_data.items() %}
+    <div class="stream-section">
+        <h2 class="stream-title">{{ stream }}</h2>
+
+        <div class="row">
+            {% for course in courses %}
+            <div class="col-lg-6 mb-4">
+                <div class="card course-card">
+
+                    <div class="course-header">
+                        <h4>{{ course.title }}</h4>
+                        <div class="course-meta">
+                            <span class="course-level">{{ course.level }}</span>
+                            <span><i class="far fa-clock"></i> {{ course.duration }}</span>
+                        </div>
+                    </div>
+
+                    <div class="course-body">
+                        <p>{{ course.description }}</p>
+
+                        <div class="module-list">
+                            {% for module in course.modules[:5] %}
+                            <div class="module-item">
+                                <i class="fas fa-check-circle text-success"></i> {{ module }}
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <div>
+                            {% for skill in course.skills %}
+                            <span class="skill-badge">{{ skill }}</span>
+                            {% endfor %}
+                        </div>
+
+                        <div class="action-buttons">
+                            <a href="{{ url_for('course_detail', course_id=course.id) }}" class="btn btn-primary-custom">
+                                <i class="fas fa-play-circle"></i> Start Learning
+                            </a>
+
+                            <a href="{{ url_for('course_detail', course_id=course.id) }}" class="btn btn-outline-custom">
+                                <i class="fas fa-info-circle"></i> View Details
+                            </a>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - SkillDev Platform</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f8f9fa;
+        }
+        .dashboard-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 0;
+            margin-bottom: 40px;
+        }
+        .stat-card {
+            border: none;
+            border-radius: 15px;
+            padding: 25px;
+            transition: transform 0.3s, box-shadow 0.3s;
+            color: white;
+            text-align: center;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.15);
+        }
+        .stat-card i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+        .stat-card h3 {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .stat-card-primary { background: linear-gradient(135deg, #4f46e5, #6366f1); }
+        .stat-card-success { background: linear-gradient(135deg, #10b981, #34d399); }
+        .stat-card-info { background: linear-gradient(135deg, #06b6d4, #22d3ee); }
+        .stat-card-warning { background: linear-gradient(135deg, #f59e0b, #fbbf24); }
+        
+        .course-progress-card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+            margin-bottom: 20px;
+            transition: transform 0.3s;
+        }
+        .course-progress-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.12);
+        }
+        .progress {
+            height: 25px;
+            border-radius: 10px;
+        }
+        .progress-bar {
+            border-radius: 10px;
+            background: linear-gradient(90deg, #10b981, #34d399);
+            font-weight: 600;
+        }
+        .action-card {
+            border: none;
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            transition: all 0.3s;
+            cursor: pointer;
+            height: 100%;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+        }
+        .action-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.15);
+            color: inherit;
+        }
+        .action-card i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+        .section-title {
+            font-weight: bold;
+            margin-bottom: 30px;
+            color: #333;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+        }
+        .empty-state i {
+            font-size: 4rem;
+            color: #06b6d4;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    {% include 'navbar.html' %}
+
+    <!-- Dashboard Header -->
+    <div class="dashboard-header">
+        <div class="container">
+            <h1><i class="fas fa-tachometer-alt"></i> Welcome back, {{ user.name }}!</h1>
+            <p class="lead mb-0">Here's your learning progress at a glance</p>
+        </div>
+    </div>
+
+    <div class="container mb-5">
+        <!-- Stats Cards -->
+        <div class="row g-4 mb-5">
+            <div class="col-md-3">
+                <div class="stat-card stat-card-primary">
+                    <i class="fas fa-book"></i>
+                    <h3>{{ enrollments|length }}</h3>
+                    <p class="mb-0">Enrolled Courses</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card stat-card-success">
+                    <i class="fas fa-certificate"></i>
+                    <h3>{{ certificates }}</h3>
+                    <p class="mb-0">Certificates Earned</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card stat-card-info">
+                    <i class="fas fa-briefcase"></i>
+                    <h3>{{ applications }}</h3>
+                    <p class="mb-0">Job Applications</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card stat-card-warning">
+                    <i class="fas fa-chart-line"></i>
+                    <h3>{{ (enrollments|selectattr('progress', 'defined')|map(attribute='progress')|sum / enrollments|length)|int if enrollments|length > 0 else 0 }}%</h3>
+                    <p class="mb-0">Average Progress</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- My Courses -->
+        <h3 class="section-title"><i class="fas fa-graduation-cap text-primary"></i> My Learning Path</h3>
+        {% if enrollments %}
+        <div class="row g-4 mb-5">
+            {% for enrollment in enrollments %}
+            <div class="col-md-6">
+                <div class="card course-progress-card">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ enrollment.course.title }}</h5>
+                        <p class="text-muted mb-3">
+                            <small>
+                                <i class="fas fa-tag"></i> {{ enrollment.course.category }} | 
+                                <i class="fas fa-signal"></i> {{ enrollment.course.difficulty }}
+                            </small>
+                        </p>
+                        <div class="progress mb-3">
+                            <div class="progress-bar" role="progressbar" 
+                                 style="width: {{ enrollment.progress }}%">
+                                {{ enrollment.progress }}% Complete
+                            </div>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <a href="{{ url_for('learning', course_id=enrollment.course_id) }}" 
+                               class="btn btn-primary flex-fill">
+                                <i class="fas fa-play"></i> Continue Learning
+                            </a>
+                            <a href="{{ url_for('course_detail', course_id=enrollment.course_id) }}" 
+                               class="btn btn-outline-primary">
+                                <i class="fas fa-info-circle"></i> Details
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state mb-5">
+            <i class="fas fa-book-open"></i>
+            <h4>No courses enrolled yet</h4>
+            <p class="text-muted">Start your learning journey by enrolling in a course</p>
+            <a href="{{ url_for('courses') }}" class="btn btn-primary btn-lg mt-3">
+                <i class="fas fa-search"></i> Browse Courses
+            </a>
+        </div>
+        {% endif %}
+
+        <!-- Quick Actions -->
+        <h3 class="section-title"><i class="fas fa-bolt text-warning"></i> Quick Actions</h3>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <a href="{{ url_for('courses') }}" class="action-card">
+                    <i class="fas fa-search text-primary"></i>
+                    <h5>Browse Courses</h5>
+                    <p class="text-muted mb-0">Explore new skills to learn</p>
+                </a>
+            </div>
+            <div class="col-md-4">
+                <a href="{{ url_for('ai_assistant') }}" class="action-card">
+                    <i class="fas fa-robot text-success"></i>
+                    <h5>AI Assistant</h5>
+                    <p class="text-muted mb-0">Get personalized guidance</p>
+                </a>
+            </div>
+            <div class="col-md-4">
+                <a href="{{ url_for('jobs') }}" class="action-card">
+                    <i class="fas fa-briefcase text-info"></i>
+                    <h5>Find Jobs</h5>
+                    <p class="text-muted mb-0">Discover opportunities</p>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Career Assistant - SkillDev</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .chat-container {
+            max-width: 900px;
+            margin: 30px auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        .chat-header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 25px;
+            text-align: center;
+        }
+        .chat-messages {
+            height: 500px;
+            overflow-y: auto;
+            padding: 30px;
+            background: #f8f9fa;
+        }
+        .message {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: flex-start;
+        }
+        .message.user {
+            flex-direction: row-reverse;
+        }
+        .message-avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            margin: 0 15px;
+        }
+        .message.ai .message-avatar {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+        .message.user .message-avatar {
+            background: linear-gradient(135deg, #f093fb, #f5576c);
+            color: white;
+        }
+        .message-content {
+            background: white;
+            padding: 15px 20px;
+            border-radius: 18px;
+            max-width: 70%;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .message.user .message-content {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+        .chat-input-area {
+            padding: 20px 30px;
+            background: white;
+            border-top: 2px solid #e0e0e0;
+        }
+        .chat-input {
+            display: flex;
+            gap: 15px;
+        }
+        .chat-input textarea {
+            flex: 1;
+            border: 2px solid #e0e0e0;
+            border-radius: 25px;
+            padding: 12px 20px;
+            resize: none;
+            font-size: 1rem;
+        }
+        .chat-input textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .send-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            color: white;
+            width: 55px;
+            height: 55px;
+            border-radius: 50%;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .send-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        .quick-questions {
+            padding: 20px 30px;
+            background: #f8f9fa;
+        }
+        .quick-question-btn {
+            background: white;
+            border: 2px solid #667eea;
+            color: #667eea;
+            padding: 10px 20px;
+            border-radius: 20px;
+            margin: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.9rem;
+        }
+        .quick-question-btn:hover {
+            background: #667eea;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    {% include 'navbar.html' %}
+
+    <div class="chat-container">
+        <div class="chat-header">
+            <h2><i class="fas fa-robot"></i> AI Career Assistant</h2>
+            <p class="mb-0">Your personal guide to skill development and career growth</p>
+        </div>
+
+        <div class="quick-questions">
+            <p class="mb-2"><strong>Quick Questions:</strong></p>
+            <button class="quick-question-btn" onclick="askQuestion(this)">
+                What skills should I learn for web development?
+            </button>
+            <button class="quick-question-btn" onclick="askQuestion(this)">
+                How do I prepare for a job interview?
+            </button>
+            <button class="quick-question-btn" onclick="askQuestion(this)">
+                What certifications are valuable?
+            </button>
+            <button class="quick-question-btn" onclick="askQuestion(this)">
+                How to build a strong portfolio?
+            </button>
+        </div>
+
+        <div class="chat-messages" id="chatMessages">
+            <div class="message ai">
+                <div class="message-avatar">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div class="message-content">
+                    <p class="mb-1"><strong>AI Assistant</strong></p>
+                    <p class="mb-0">Hello! I'm your AI career assistant. I'm here to help you with:</p>
+                    <ul class="mb-0 mt-2">
+                        <li>Career path guidance</li>
+                        <li>Skill development strategies</li>
+                        <li>Learning resources recommendations</li>
+                        <li>Interview preparation tips</li>
+                        <li>Industry insights</li>
+                    </ul>
+                    <p class="mt-2 mb-0">Ask me anything about your career journey!</p>
+                </div>
+            </div>
+
+            {% if response %}
+            <div class="message user">
+                <div class="message-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="message-content">
+                    <p class="mb-0">{{ request.form.get('question') }}</p>
+                </div>
+            </div>
+
+            <div class="message ai">
+                <div class="message-avatar">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div class="message-content">
+                    <p class="mb-1"><strong>AI Assistant</strong></p>
+                    <div style="white-space: pre-wrap;">{{ response }}</div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <form method="POST" id="chatForm">
+            <div class="chat-input-area">
+                <div class="chat-input">
+                    <textarea 
+                        name="question" 
+                        id="messageInput" 
+                        rows="2" 
+                        placeholder="Ask me anything about your career..." 
+                        required></textarea>
+                    <button type="submit" class="send-btn">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function askQuestion(button) {
+            document.getElementById('messageInput').value = button.textContent.trim();
+            document.getElementById('messageInput').focus();
+        }
+
+        // Auto-scroll to bottom
+        const chatMessages = document.getElementById('chatMessages');
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+
+        // Auto-resize textarea
+        const textarea = document.getElementById('messageInput');
+        textarea.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = (this.scrollHeight) + 'px';
+        });
+
+        // Submit on Ctrl+Enter
+        textarea.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'Enter') {
+                document.getElementById('chatForm').submit();
+            }
+        });
+    </script>
+</body>
+</html>
