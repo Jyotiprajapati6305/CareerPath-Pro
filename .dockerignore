@@ -1,0 +1,21 @@
+# Keep secrets, local data and history out of the image.
+# Without this, `COPY . .` in the Dockerfile bakes all of it into a layer.
+.git
+.gitignore
+.dockerignore
+.env
+.env.*
+!.env.example
+
+instance/
+uploads/
+
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+
+README.md
+.vscode/
+.idea/

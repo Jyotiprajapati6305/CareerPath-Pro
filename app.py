@@ -21,8 +21,19 @@ from werkzeug.security import check_password_hash, generate_password_hash
 # ------------------------
 load_dotenv()
 
-FLASK_SECRET_KEY = os.getenv("FLASK_SECRET_KEY", "fallback_secret")
+# No default on purpose. This key signs session cookies, so a hardcoded
+# fallback sitting in a public repo would let anyone forge a logged-in
+# session for any account.
+FLASK_SECRET_KEY = os.getenv("FLASK_SECRET_KEY")
+if not FLASK_SECRET_KEY:
+    raise RuntimeError(
+        "FLASK_SECRET_KEY is not set. Add it to your .env "
+        '(generate with: python -c "import secrets; print(secrets.token_hex(32))").'
+    )
+
 DATABASE_URL = os.getenv("DATABASE_URL")
+if not DATABASE_URL:
+    raise RuntimeError("DATABASE_URL is not set. See .env.example.")
 GOOGLE_GENAI_API_KEY = os.getenv("GOOGLE_GENAI_API_KEY")
 LINKEDIN_TOKEN = os.getenv("LINKEDIN_TOKEN")
 
@@ -503,4 +514,8 @@ if __name__ == "__main__":
         print("Tables should now be created:", db.inspect(db.engine).get_table_names())
     import os
     port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port, debug=True)
+    # debug off unless explicitly asked for. The Werkzeug debugger allows
+    # arbitrary code execution from the browser, so it must never be on for
+    # anything reachable from outside this machine.
+    debug = os.environ.get("FLASK_DEBUG", "").lower() in ("1", "true", "yes")
+    app.run(host="0.0.0.0", port=port, debug=debug)
